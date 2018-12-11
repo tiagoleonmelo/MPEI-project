@@ -40,7 +40,7 @@ public class LSHTest {
 		
 		/*		Fim dos dados		*/
 		
-		SimilarityCalculator lsh=new SimilarityCalculator(userInfo,0.2,20,15); // considerando o exemplo das TPs
+		SimilarityCalculator lsh=new SimilarityCalculator(userInfo,0.7,10,200);
 		lsh.LSH();
 
 	}

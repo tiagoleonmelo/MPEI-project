@@ -20,7 +20,8 @@ public class Main {
 		// Testaremos agora o cbf usando os 8 ficheiros acima
 		
 		Scanner sc;
-		CountingBloomFilter cbf = new CountingBloomFilter(100000,15);
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		CountingBloomFilter<String> cbf = new CountingBloomFilter(100000,15,1);
 		Contador_Est ce=new Contador_Est(0.5);
 		
 		for(int ficheiro=0;ficheiro < nFiles; ficheiro++) {

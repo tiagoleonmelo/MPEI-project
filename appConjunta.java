@@ -63,7 +63,8 @@ public class appConjunta {
 		sc.close();
 		
 		Contador_Est cont=new Contador_Est(0.5);	//selecionemos % dos utilizadores
-		CountingBloomFilter cbf=new CountingBloomFilter(10000,5);
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		CountingBloomFilter<String> cbf=new CountingBloomFilter(10000,5,1);
 		
 		for(int i=0;i<userInfo.length;i++) {
 			cont.count();
