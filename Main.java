@@ -8,9 +8,7 @@ public class Main {
 
 	public static void main(String[] args) throws FileNotFoundException {
 
-		// contador estocastico: incrementar dependendo da probabilidade que saiu! esta probabilidade devera ser referida no construtor
-		// importante sera notar que o numero que se obter dividido pela probabilidade devera dar o numero total
-		// teste: dois for's: um para incrementar o contador outro para calcular a media dos valores armazenados no contador
+		// Teste dos tres modulos
 		
 		int nFiles=8;
 		File[] ficheiros= new File[nFiles];

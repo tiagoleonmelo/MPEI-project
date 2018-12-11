@@ -82,7 +82,7 @@ public class appConjunta {
 			}
 		}
 
-		SimilarityCalculator similarityCalc=new SimilarityCalculator(selectedUsers, 8);
+		SimilarityCalculator similarityCalc=new SimilarityCalculator(selectedUsers, 5);
 		ArrayList<int[]> sims=new ArrayList<>();
 		
 		double[][] sim=similarityCalc.getSimilarity();

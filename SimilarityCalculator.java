@@ -20,7 +20,9 @@ public class SimilarityCalculator {
 	
 	int nFuncs;
 	int nFiles;
+	int b,r;
 	ArrayList<String>[] words;	// array de arraylists onde cada posiçao ira conter um array com as palavras do ficheiro da posiçao i do array de ficheiros passado como argumento
+	double threshold;
 	
 	@SuppressWarnings("unchecked")
 	public SimilarityCalculator(File[] files, int nFuncs) throws FileNotFoundException {
@@ -81,7 +83,7 @@ public class SimilarityCalculator {
 			System.out.println("FICHEIRO " + (file+1));
 			line=1;
 			for(i = 0;i<words[file].size();i++) {
-				System.out.println("Linha " + line + "->" + words[file].get(i));
+				System.out.println("Palavra " + line + "->" + words[file].get(i));
 				line++;
 			}
 		}
@@ -96,7 +98,7 @@ public class SimilarityCalculator {
 				for(int j = 0; j < words[ficheiro].size(); j++) {
 					String elemento = words[ficheiro].get(j);
 					String key = elemento;
-					key=key+(i*Math.pow(2, 32)%12345);	// trying to get sparser minHashes
+					key=key+(i*Math.pow(2, 32)%12345678);	// trying to get sparser minHashes
 					hash = Math.abs(key.hashCode());
 					if(hash < minHash) {
 						minHash=hash;
@@ -117,37 +119,6 @@ public class SimilarityCalculator {
 	public double[][] getSimilarity() {	
 		
 		double[][] similarity = new double[nFiles][nFiles];
-		//int[] assinatura1 = new int[nFuncs];
-		//int[] assinatura2 = new int[nFuncs];
-		
-		/*for(int mds=0;mds < nFiles;mds++) {
-			int iguais = 0;
-
-			for(int linha=0;linha < nFuncs;linha++) {
-				assinatura1[linha]=this.getSignatureMatrix()[linha][mds];
-			}
-			
-			for(int mds2=mds+1; mds2 < nFiles;mds2++) {
-				
-				for(int linha=0;linha < nFuncs;linha++) {
-					assinatura2[linha]=this.getSignatureMatrix()[linha][mds2];
-				}
-			
-				for(int i = 0; i < nFuncs; i++) {
-					for(int j = 0; j < nFuncs; j++) {
-						if(assinatura1[i]==assinatura2[j]) {
-							iguais++;
-							break;
-						}
-					}
-				}
-								
-				similarity[mds][mds2]=(double)iguais/(double)nFuncs;
-				
-			}
-		
-		}*/
-		
 		int[][] sign= this.getSignatureMatrix();
 		
 		for(int file1=0;file1 < nFiles-1;file1++) {
@@ -157,13 +128,10 @@ public class SimilarityCalculator {
 				int iguais=0;
 		
 				for(int i=0;i < this.nFuncs;i++) {
-					
-					for(int j=0;j < this.nFuncs;j++) {
-						
-						if(sign[i][file1]==sign[j][file2]) {
+											
+						if(sign[i][file1]==sign[i][file2]) {
 							iguais++;
 						}
-					}
 				}
 				
 				similarity[file1][file2]=(double)iguais/(double)nFuncs;
@@ -174,7 +142,7 @@ public class SimilarityCalculator {
 		return similarity;
 	}
 	
-	public int newHashCode(String key) {
+	public int newHashCode(String key) {		// sounds good, doesnt work
 		int hash=1;
 		for(int i=0; i < key.length();i++) {
 			hash*=(int) key.charAt(i);
@@ -199,6 +167,95 @@ public class SimilarityCalculator {
 		br.close();
 
 		return conjShingles;
+	}
+	
+	public SimilarityCalculator(ArrayList<String>[] arrList, double threshold, int b, int r) {
+		// split the signature matrix M into bands
+		// hash bands of different documents
+		// after hashing multiple times, 2 bands hashed at least once to the same bucket
+		// chances are they are similar
+		
+		// r rows/ b bands (b*r=nFuncs)
+		this.b=b;
+		this.r=r;
+		this.nFuncs=b*r;
+		this.threshold=threshold;
+		
+		this.nFiles = arrList.length;
+		this.words=arrList;
+	}
+	
+	public void LSH() {
+		int[][] sim=this.getSignatureMatrix();
+		ArrayList<int[]> bandas=new ArrayList<>();	// arrayList de arrays (bandas), onde cada
+												// posiçao sera ocupada por um array (banda)
+		for(int i=0;i<b;i++) {					// onde cada posiçao equivale ao hashing
+			//if(bandas.get(i)==null){			// de cada coluna (documento)
+				int[] banda=new int[nFiles];
+				for(int ai=0;ai<nFiles;ai++) {
+					int hashThis=1;
+					for(int rows=0;rows<r;rows++) {
+						hashThis*=sim[rows][ai];
+					}
+					banda[ai]=hash(hashThis);
+				}
+				bandas.add(banda);
+			//}
+		}
+		
+		// Temos neste momento uma estrutura de dados que contem todas as bandas, uma em cada posiçao
+		// Queremos agora mapear cada uma das posiçoes das bandas para buckets; se pelo menos
+		// uma das posiçoes da alguma das bandas mapear para a mm posiçao que outra
+		// probably esses cenas sao semelhantes
+		
+		@SuppressWarnings("unchecked")
+		ArrayList<Integer>[] buckets = new ArrayList[10000];
+				
+		for(int i=0; i<b;i++) {
+			for(int j=0;j<nFiles;j++) {
+				if(buckets[bandas.get(i)[j]]==null) {
+					buckets[bandas.get(i)[j]]=new ArrayList<>();
+					buckets[bandas.get(i)[j]].add(j);
+				}else {
+					if(!buckets[bandas.get(i)[j]].contains(j)) {
+						buckets[bandas.get(i)[j]].add(j);
+					}
+				}
+			}
+		}
+		
+		// Agora temos uma estrutura de dados com todos os buckets e onde foram inseridas
+		// todas as hashes de cada coluna de cada banda. Sempre que o size de cada posiçao
+		// for maior que 1, quer dizer que temos similaridade entre os dois ficheiros
+		// nessa posiçao
+		
+		double[][] similarity=this.getSimilarity();
+		
+		for(int i=0; i<buckets.length;i++) {
+			if(buckets[i]!=null && buckets[i].size()>1) {
+				// Agora quero iterar por todos estes itens semelhantes e verificar se o sao de facto
+				// 
+				for(int user1=0;user1<buckets[i].size()-1;user1++) {
+					for(int user2=user1+1;user2<buckets[i].size();user2++) {
+						if(similarity[user1][user2]>threshold) {
+							System.out.println("Utilizadores semelhantes: " + buckets[i].get(user1)+" - "+buckets[i].get(user2));
+							System.out.println(buckets[i].get(user1) + ": " + words[buckets[i].get(user1)]);
+							System.out.println(buckets[i].get(user2) + ": " + words[buckets[i].get(user2)]);
+						}
+					}
+				}
+			}
+		}
+		
+		
+		
+		// WHAT IF: arrays de documentos onde cada array representa uma banda
+		// e cada posiçao do array representa a hash duma coluna
+		
+	}
+	
+	public int hash(int nr) {
+		return Math.abs((nr*nFiles)%10000);	// 10000 = espaço no bucket
 	}
 	
 	

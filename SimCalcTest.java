@@ -90,7 +90,7 @@ public class SimCalcTest {
 		sc.close();
 		
 		for(int i:users.keySet()) {
-			System.out.println(i + " " + users.get(i));
+			System.out.println(i + " " + users.get(i));	// impressao dos utilizadores e filmes q estes avaliaram	
 		}
 
 		// Neste momento temos um mapa com todos os utilizadores e filmes que eles avaliaram
@@ -112,7 +112,6 @@ public class SimCalcTest {
 		String[][] usersMatrix = new String[maxUsers][maxMovies];
 
 		for(int i=1;i<=maxUsers;i++) {
-			//System.out.println(i);
 			for(int j=0;j<users.get(i).size();j++) {
 				usersMatrix[i-1][j]=users.get(i).get(j).toString();
 			}
@@ -121,43 +120,34 @@ public class SimCalcTest {
 		// Temos agora uma matriz em que cada linha corresponde a um utilizador e aos filmes q ele avaliou
 		
 		SimilarityCalculator simCalc2=new SimilarityCalculator(usersMatrix,100);
-		//simCalc2.printWords();
-		int[][] signMat = simCalc2.getSignatureMatrix();	// matriz assinatura (minHashes de cada user)
+		//int[][] signMat = simCalc2.getSignatureMatrix();	// matriz assinatura (minHashes de cada user)
 		
-		for(int i=0;i<signMat.length;i++) {		// deveria imprimir 5 linhas pq 5 hashFuncs
+		/*for(int i=0;i<signMat.length;i++) {		// deveria imprimir 5 linhas pq 5 hashFuncs
 			for(int j=0;j<signMat[i].length;j++) {
 				System.out.print(signMat[i][j] + ";");
 			}
 			System.out.println();
-		}
+		}*/		// -> Impressao da matriz assinatura
 
 		double[][] simMat = simCalc2.getSimilarity();
 		int similarUser=0;
 		
 		for(int t=0; t < maxUsers; t++) {
 			for(int j=0; j < maxUsers; j++) {
-				if(j <= t) {
+				/*if(j <= t) {
 					System.out.printf("%5s","- ");
 				}else {
 					System.out.printf("%3.2f ",simMat[t][j]);
-				}
-				/*if(simMat[t][j] > 0.4 && simMat[t][j]!=0) {
-					System.out.println("Utilizadores semelhantes: " + t + " - " + j);
+				}*/		// -> impressao da matriz similaridade entre Users
+				if(simMat[t][j] > 0.6) {
+					System.out.println("Utilizadores semelhantes: " + t + " - " + j + " com sim="+simMat[t][j]);
 					similarUser++;
-				}*/
+				}
 			}
-			System.out.println();
+			//System.out.println();
 		}
-		
-		System.out.println(simMat[328][788]);
-		System.out.println(simMat[408][898]);
-		System.out.println(simMat[489][587]);
 
 		System.out.println("Numero de semelhanças com threshold superior ao definido: " + similarUser);
-
-		/*for(int i:users.keySet()) {
-			System.out.println(i + " " + users.get(i));
-		}*/
 	}
 
 }
